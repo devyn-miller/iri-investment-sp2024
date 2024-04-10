@@ -1,5 +1,6 @@
 import numpy as np
 from statsmodels.stats.power import TTestIndPower
+from scipy.stats import shapiro, levene
 
 # Placeholder for simulation function
 def simulate_treatment_one(n_simulations=1000):
@@ -89,3 +90,24 @@ elif effect_size < 0.5:
     print("The medium effect size indicates that our findings have practical significance, potentially informing policy or practice.")
 else:
     print("The large effect size underscores the robustness of the treatment effect, highlighting its importance for future interventions.")
+# Normality Checks
+stat, p = shapiro(metrics_treatment_one)
+print('Treatment One: Statistics=%.3f, p=%.3f' % (stat, p))
+stat, p = shapiro(metrics_treatment_two)
+print('Treatment Two: Statistics=%.3f, p=%.3f' % (stat, p))
+
+# Interpret normality test results
+if p > alpha:
+    print('Sample looks Gaussian (fail to reject H0)')
+else:
+    print('Sample does not look Gaussian (reject H0)')
+
+# Variance Equality Check
+stat, p = levene(metrics_treatment_one, metrics_treatment_two)
+print('Statistics=%.3f, p=%.3f' % (stat, p))
+
+# Interpret variance test results
+if p > alpha:
+    print('Equal variances across samples (fail to reject H0)')
+else:
+    print('Unequal variances across samples (reject H0)')
