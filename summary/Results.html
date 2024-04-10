@@ -1,0 +1,13 @@
+{{ block title }}
+总结
+{{ endblock }}
+{{ block content }}
+<div>
+    <p>
+本次实验已经结束！<br>
+非常感谢您的参与!<br>
+在本实验的所有阶段，您都获得了{{player.participant.payoff_plus_participation_fee()}}<br>
+您的全部收益将转入您的微课研账户。
+</p>
+</div>
+{{endblock}}

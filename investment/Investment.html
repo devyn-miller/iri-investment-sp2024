@@ -1,0 +1,416 @@
+{{ block content }}
+<head>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<div id="header">
+    <table class="table top-table">
+        <tr>
+            <th class="left-aligned">100天中的第 {{player.round_number}} 天</th>
+            <th class="centered">剩余 <span id="time-left"></span> </th>
+            <th class="right-aligned">收益: {{payoff_usd}}</th>
+        </tr>
+    </table>
+</div>
+<input type="hidden" name="offer_actions" id="offer_actions" />
+<input type="hidden" name="work_actions" id="work_actions" />
+
+<h3>工作机会</h3>
+<table class="table  offer-section">
+    <thead>
+        <tr>
+            <th>序号</th>
+            <th class="centered">所需工人数量</th>
+            <th>工作时长<br><span class="sub-heading">(平均时长[范围])</span></th>
+            <th>截止期限<br><span class="sub-heading">(Soft/Hard)</span></th>
+            <th>收益</th>
+            <th>费率</th>
+            <th class="centered">是否接受这份工作?</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{ for job in offer_strs }}
+        <tr>
+            <td>{{job.name}}</td>
+            <td class="centered">{{job.workers}}</td>
+            <td>{{job.lengths}}</td>
+            <td>{{job.deadlines}}</td>
+            <td>{{job.payment}}</td>
+            <td>{{job.rate}}</td>
+            <td class="centered">
+                <input type="checkbox"
+                       id="taking_checkbox{{job.name}}"
+                       data-job-name="{{job.name}}"
+                       onclick="toggleTaking('{{job.name}}', this.checked)"
+                       >
+            </td>
+        </tr> {{ endfor }}
+    </tbody>
+</table>
+
+<br><br><br>
+<table class="table current-jobs-table">
+    <tr>
+        <td class="left-aligned h3-style">当前工作</td>
+        <td class="right-aligned" id="workers-assigned">X/10可分配工人数量</td>
+    </tr>
+</table>
+<table class="table work-section">
+    <thead>
+        <tr>
+            <th></th>
+            <th>序号</th>
+            <th class="centered">所需工人数量</th>
+            <th>工作进度</th>
+            <th>工作时长<br><span class="sub-heading">(平均时长[范围])</span></th>
+            <th>剩余天数<br><span class="sub-heading">(Soft/Hard)</span></th>
+            <th>收益</th>
+            <th>费率</th>
+            <th class="centered">是否工作?</th>
+            <th class="graph-column"></th>
+        </tr>
+    </thead>
+    <tbody>
+        {{ for job in job_strs }}
+        <tr id="row_for_{{job.name}}">
+            <td class="centered">{{job.status}}</td>
+            <td>{{job.name}}</td>
+            <td class="centered">{{job.workers}}</td>
+            <td>{{job.progress_cur}}<span class="progress-text">{{job.progress_last}}</span></td>
+            <td>{{job.lengths}}</td>
+            <td {% if job.danger %}class="danger-text"{% endif %}">
+                {{ job.deadlines }}
+            </td>
+            <td>{{job.payment}}<span class="penalty-text">{{job.penalty}}</span></td>
+            <td>{{job.rate}}</td>
+            <td class="centered">
+                <input type="checkbox"
+                       id="working_checkbox{{job.name}}"
+                       data-job-name="{{job.name}}"
+                       data-workers-required="{{job.workers}}"
+                       onclick="toggleWorking('{{job.name}}', this.checked, '{{job.workers}}')"
+                       >
+            </td>
+            <td class="sparkline-cell" id="sparkline{{job.name}}"></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<br><br>
+{{if allow_submit}}
+<input type="submit" class="otree-btn-next" value="提早提交">
+{{endif}}
+{{if ended_strs}}
+<h3>完成的工作</h3>
+<table class="table">
+    <thead>
+        <tr>
+            <th>收益</th>
+            <th>完成状态</th>
+            <th>序号</th>
+            <th class="centered">所用工人数量</th>
+            <th>工作进度</th>
+            <th class="centered">收益</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{ for job in ended_strs }}
+        <tr>
+            <td>{{job.status}}</td>
+            <td>{{job.deadlines}}</td>
+            <td>{{job.name}}</td>
+            <td class="centered">{{job.workers}}</td>
+            <td>{{job.progress_cur}}<span class="progress-text">{{job.progress_last}}</span></td>
+            <td class="centered"><span class="earned-pay-text">{{job.payment}}</span><span class="lost-pay-text">{{job.penalty}}</span></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{{endif}}
+
+<style>
+ #header{
+     top: 0px;
+ }
+ .current-jobs-table, .current-jobs-table td {
+     font-size: 24px;
+     font-weight: normal;
+     border: none;
+     padding: 0;
+     margin-bottom: 5px;
+ }
+ .current-jobs-table td.h3-style {
+     font-size: 1.17em; /* Common default size for h3 */
+     /* font-weight: bold; /* h3 is usually bold */ */
+     /* Add other h3 styles if needed */
+ }
+ .work-section th.graph-column,
+ .work-section td.sparkline-cell {
+     border-left: 1px solid #ccc; /* Adjust color as needed */
+ }
+
+ /* Left align the graph and remove margins */
+ .work-section td.sparkline-cell {
+     text-align: left;
+     margin: 0;
+     padding-left: 0; /* Removes padding if there's any */
+}
+ #workers-assigned {
+     text-align: right;
+ }
+ .sub-heading {
+     font-size: 16px;
+     /* font-weight: normal; */
+ }
+ .work-section td.danger-text {
+     color: red;
+ }
+ .progress-text {
+     color: rgba(0,128,0,0.6);
+ }
+ .penalty-text {
+     color: rgba(255, 0, 0, 0.5);
+ }
+ .lost-pay-text {
+     color: red;
+ }
+ .earned-pay-text {
+     color: green;
+ }
+ .otree-timer {
+     display: none;
+ }
+ .top-table td, .top-table th {
+     font-size: 24px; /* Adjust the size as needed */
+ }
+ .left-aligned {
+     text-align: left;
+ }
+ thead th {
+     vertical-align: middle;
+     font-size: 18px;
+ }
+ .centered {
+     text-align: center;
+ }
+ .right-aligned {
+     text-align: right;
+ }
+ .highlight-disabled {
+     background-color: #ffe3e3;
+ }
+ .highlight-selected {
+     background-color: #faf9be;
+ }
+ input[type="checkbox"] {
+     transform: scale(1.4); /* Adjust the scaling factor as needed */
+ }
+ .otree-btn-next {
+     display: block; /* Makes the button a block-level element */
+     margin-left: auto;
+     margin-right: auto;
+     transform: scale(1.4);
+     background-color: lightgreen;
+     color: black;
+     border-radius: 5px;
+     transition: background-color 0.3s ease;
+     /* Other styles */
+ }
+ .table {
+     width: 110%;
+     table-layout: auto;
+}
+ .otree-btn-next:disabled {
+     background-color: #cccccc; /* Gray background for disabled state */
+     color: #666666; /* Darker text color to indicate it's disabled */
+     cursor: not-allowed; /* Cursor indicates the button is not clickable */
+     opacity: 0.5; /* Make the button appear faded */
+}
+</style>
+
+<script>
+ let totalWorkers = js_vars.workers;
+ let jobs = js_vars.jobs;
+ let workersUsed = 0;
+
+ function updateJobAccessibility() {
+     const jobCheckboxes = document.querySelectorAll('input[type="checkbox"][id^="working_checkbox"]');
+     jobCheckboxes.forEach(checkbox => {
+         const workersRequired = parseInt(checkbox.getAttribute('data-workers-required'));
+         const jobId = checkbox.id.replace('working_checkbox', '');
+         const jobRow = document.getElementById('row_for_' + jobId);
+         const checked = checkbox.checked
+
+         if (!checked && workersRequired > totalWorkers - workersUsed) {
+             checkbox.disabled = true;
+             jobRow.classList.add('highlight-disabled'); // Add a class to highlight
+         } else {
+             checkbox.disabled = false;
+             jobRow.classList.remove('highlight-disabled');
+         }
+         if (checked) {
+             jobRow.classList.add('highlight-selected');
+         } else {
+             jobRow.classList.remove('highlight-selected');
+         }
+     });
+ }
+ function updateWorkersAssigned() {
+     document.getElementById('workers-assigned').textContent = `${workersUsed}/10 可分配的工人数量`;
+ }
+ function toggleWorking(jobId, isChecked, workersRequired) {
+     workersRequired = parseInt(workersRequired);
+     if (isChecked) {
+         if (workersRequired <= totalWorkers - workersUsed) {
+             workersUsed += workersRequired;
+         } else {
+             document.getElementById('working_checkbox' + jobId).checked = false;
+             return;
+         }
+     } else {
+         workersUsed -= workersRequired;
+     }
+     updateJobAccessibility();
+     updateWorkActions()
+     updateWorkersAssigned();
+ }
+
+ function toggleTaking(jobId, isChecked) {
+     updateOfferActions();
+ }
+
+ function updateWorkActions() {
+     let workActions = [];
+
+     // For Work Actions
+     document.querySelectorAll('.work-section input[type="checkbox"]').forEach(checkbox => {
+         if (checkbox.checked) {
+             workActions.push(checkbox.getAttribute('data-job-name'));
+         }
+     });
+
+     // Update hidden inputs
+     document.getElementById('work_actions').value = workActions.join(',');
+ }
+
+ function getAvailableWorkers() {
+     return parseInt(document.getElementById('workers').textContent)
+ }
+
+ function updateOfferActions() {
+     let offerActions = [];
+
+     // For Offer Actions
+     document.querySelectorAll('.offer-section input[type="checkbox"]').forEach(checkbox => {
+         if (checkbox.checked) {
+             offerActions.push(checkbox.getAttribute('data-job-name'));
+         }
+     });
+
+     // Update hidden inputs
+     document.getElementById('offer_actions').value = offerActions.join(',');
+ }
+
+ let customTimerEle = document.getElementById('time-left');
+ document.addEventListener("DOMContentLoaded", function (event) {
+     $('.otree-timer__time-left').on('update.countdown', function (event) {
+         let timeString = "";
+
+         const hours = event.offset.hours;
+         const minutes = event.offset.minutes;
+         const seconds = event.offset.seconds;
+
+         if (hours > 0) {
+             timeString += `${hours} 时${hours > 1 ? '' : ''} `;
+             if (minutes > 0) {
+                 timeString += `${minutes} 分${minutes > 1 ? '' : ''}`;
+             }
+         } else if (minutes > 0) {
+             timeString += `${minutes} 分${minutes > 1 ? '' : ''} `;
+             if (seconds > 0) {
+                 timeString += `${seconds} 秒${seconds > 1 ? '' : ''}`;
+             }
+         } else {
+             timeString += `${seconds} 秒${seconds > 1 ? '' : ''}`;
+         }
+
+         customTimerEle.innerText = timeString.trim();
+     });
+ });
+ // Function to draw sparklines with D3.js
+ function drawSparklines(jobs) {
+     jobs.forEach(function(job) {
+         // Select the sparkline cell by ID and append an SVG
+         var svg = d3.select('#sparkline' + job.name)
+                     .append('svg')
+                     .attr('width', 80) // Set the width of the SVG element
+                     .attr('height', 10); // Set the height of the SVG element
+
+         // Define the data for the sparkline
+         var data = [job.lengthRange[0], job.lengthRange[1]];
+
+         // Create a scale to fit the sparkline within the SVG
+         var xScale = d3.scaleLinear()
+                        .domain([0, 10])
+                        .range([0, 80]);
+
+         // Draw the line for the sparkline
+         var line = d3.line()
+                      .x(function(d, i) { return xScale(d); })
+                      .y(function() { return 5; }); // Center the line in the SVG
+
+         svg.append('path')
+            .datum(data)
+            .attr('d', line)
+            .attr('stroke', 'black')
+            .attr('stroke-width', 2);
+
+         // Add a circle for the expected length
+         svg.append('circle')
+            .attr('cx', xScale(job.expectedLength))
+            .attr('cy', 5)
+            .attr('r', 3)
+            .attr('fill', 'blue');
+         if (!job.pastSoft) {
+             svg.append('line')
+                .attr('x1', xScale(job.softDeadline))
+                .attr('y1', 0)
+                .attr('x2', xScale(job.softDeadline))
+                .attr('y2', 30) // Height of the SVG
+                .attr('stroke', 'orange')
+                .attr('stroke-width', 2);
+         }
+
+         // Draw the hard deadline line
+         svg.append('line')
+            .attr('x1', xScale(job.hardDeadline))
+            .attr('y1', 0)
+            .attr('x2', xScale(job.hardDeadline))
+            .attr('y2', 30) // Height of the SVG
+            .attr('stroke', 'red')
+            .attr('stroke-width', 2);
+
+     });
+ }
+
+ document.addEventListener("DOMContentLoaded", function () {
+     // Disable the submit button on page load
+     let submitButton = document.querySelector('.otree-btn-next');
+     submitButton.disabled = true;
+
+     // Function to enable the submit button after 15 seconds
+     function enableSubmitButton() {
+         submitButton.disabled = false;
+     }
+
+     // Set a timeout to enable the submit button after 15 seconds
+     setTimeout(enableSubmitButton, 15000); // 15000 milliseconds = 15 seconds
+ });
+
+ // Initial call to set up job accessibility based on initial worker count
+ updateJobAccessibility();
+ updateWorkersAssigned();
+ updateOfferActions();
+ updateWorkActions();
+ drawSparklines(jobs);
+</script>
+{{ endblock }}
