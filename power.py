@@ -40,4 +40,7 @@ power = 0.8  # Desired power
 
 analysis = TTestIndPower()
 result = analysis.solve_power(effect_size, power=power, nobs1=None, ratio=1.0, alpha=alpha)
-print(f'Minimum Sample Size: {result:.3f}')
+if isinstance(result, np.ndarray) and result.size == 1:
+    result = result.item()  # Convert a one-element array to a scalar
+result = round(result)  # Round to the nearest whole number
+print(f'Minimum Sample Size: {result}')
