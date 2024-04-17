@@ -60,7 +60,7 @@ if improvement.mean() > 0:
 else:
     print("On average, there was no significant improvement in payment received from the first to the second session.")
 
-effect_size = 0.5  # Medium effect size
+effect_size = 0.1  # Medium effect size
 alpha = 0.05  # Significance level
 power = 0.8  # Power
 
