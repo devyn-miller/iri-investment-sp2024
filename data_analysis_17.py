@@ -139,5 +139,5 @@ fig.update_xaxes(title_text='Payment Received')
 fig.update_yaxes(title_text='Count')
 
 # Add a legend to differentiate between Baseline and Treatment
-fig.update_traces(opacity=0.75) # Adjust opacity to make the overlay more visible
+fig.update_traces(opacity=0.75)  # Adjust opacity to make the overlay more visible
 fig.show()
