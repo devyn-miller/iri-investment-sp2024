@@ -3,7 +3,7 @@ import numpy as np
 from scipy import stats
 import matplotlib.pyplot as plt
 import seaborn as sns
-from statsmodels.stats.power import TTestIndPower
+from statsmodels.stats.power import TTestIndPower, TTestPower
 import plotly.express as px
 import plotly.graph_objects as go
 
@@ -60,7 +60,7 @@ if improvement.mean() > 0:
 else:
     print("On average, there was no significant improvement in payment received from the first to the second session.")
 
-effect_size = 0.1  # Medium effect size
+effect_size = 0.95  # Medium effect size
 alpha = 0.05  # Significance level
 power = 0.8  # Power
 
@@ -141,3 +141,20 @@ fig.update_yaxes(title_text='Count')
 # Add a legend to differentiate between Baseline and Treatment
 fig.update_traces(opacity=0.75)  # Adjust opacity to make the overlay more visible
 fig.show()
+# Assuming 'improvement' is the difference between treatment and baseline for each subject
+mean_diff = improvement.mean()
+std_diff = improvement.std()
+
+# Calculate effect size for paired t-test
+effect_size = mean_diff / std_diff
+
+# Initialize power analysis object for paired t-test
+analysis = TTestPower()
+
+# Solve for power given the effect size, number of observations, and alpha level
+power = analysis.solve_power(effect_size=effect_size, nobs=len(improvement), alpha=alpha, alternative='two-sided')
+
+print(f"Power: {power}")
+# Add a print statement to include what the actual sample size is compared to the minimum necessary sample size from power test
+actual_sample_size = len(df_baseline)
+print(f"Actual sample size: {actual_sample_size}, Required minimum sample size: {sample_size}")
